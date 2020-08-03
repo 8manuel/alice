@@ -50,7 +50,7 @@ var cli = http.DefaultClient
 const ServiceOnboarding = "onboarding"
 
 // User the Alice provided user
-var User = "assetverse-trial"
+var User = "!!! PUT YOUR USER ID HERE !!!"
 
 // ApiKey the Alice provided apiKey
 var ApiKey = "!!! PUT YOUR API KEY HERE !!!"
