@@ -186,12 +186,15 @@ func GetReport(userId string, userToken *AuthToken) (raw map[string]interface{},
 }
 
 // CheckReport returns a map for the Kyc; if voidBad it voids the selfie/document that not meets the validations
-func CheckReport(userId string, sd map[string]string, voidBad bool) (code int, raw map[string]interface{}, err error) {
+func CheckReport(userId string, userToken *AuthToken, sd map[string]string, voidBad bool) (code int, raw map[string]interface{}, err error) {
+	// if not backendToken get one
+	if userToken.Token == "" {
+		if userToken, err = AuthBackendUserToken(ServiceOnboarding, userId); err != nil {
+			return
+		}
+	}
 	// get the report
-	var userToken *AuthToken
-	if userToken, err = AuthBackendUserToken(ServiceOnboarding, userId); err != nil {
-		return
-	} else if raw, err = GetReport(userId, userToken); err != nil {
+	if raw, err = GetReport(userId, userToken); err != nil {
 		return
 	}
 
