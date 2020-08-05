@@ -61,6 +61,9 @@ var UrlAuth = "https://apis.alicebiometrics.com/auth"
 // UrlOnboard the url of the Alice onboarding backend
 var UrlOnboard = "https://apis.alicebiometrics.com/onboarding"
 
+// BasePath contains the base path where the files are downloaded if no filePath set
+var BasePath = ""
+
 // AuthToken struct to contain the token and its expiry (all Alice Auth backend tokens have 1h expiry)
 type AuthToken struct {
 	Token string // token
@@ -74,7 +77,7 @@ var SessionToken AuthToken
 var BackendToken = make(map[string]AuthToken)
 
 // Init initialize the Alice credentials and urls; the values empty are ignored.
-func Init(user, apiKey, urlAuth, urlOnboard string) {
+func Init(user, apiKey, urlAuth, urlOnboard, basePath string) {
 	if user != "" {
 		User = user
 	}
@@ -86,6 +89,9 @@ func Init(user, apiKey, urlAuth, urlOnboard string) {
 	}
 	if urlAuth != "" {
 		UrlAuth = urlAuth
+	}
+	if basePath != "" {
+		BasePath = basePath
 	}
 }
 
@@ -347,16 +353,19 @@ func GetCertificates(userId string, userToken *AuthToken) (certificates []string
 }
 
 // GetCertificate downloads the pdf with the certificate.
-func GetCertificate(certificateId, userId string, userToken *AuthToken) (fileLen int, err error) {
+func GetCertificate(certificateId, userId, filePath string, userToken *AuthToken) (fileLen int, err error) {
 	// if not backendToken get one
 	if userToken.Token == "" {
 		if userToken, err = AuthBackendUserToken(ServiceOnboarding, userId); err != nil {
 			return
 		}
 	}
+	// if file not set
+	if filePath=="" {
+		filePath = BasePath+userId + ".pdf"
+	}
 	// get the certificate
 	var raw map[string]interface{}
-	filePath := userId + ".pdf"
 	raw, err = DoRequest(UrlOnboard, "user/certificate/"+certificateId, "GET", map[string]string{"Authorization": "bearer " + userToken.Token}, nil, nil, nil, &filePath)
 	if err == nil && raw["fileLen"] != nil {
 		fileLen = raw["fileLen"].(int)
@@ -443,8 +452,6 @@ func DoRequest(backend, path, method string, headerParams, formParams map[string
 		var fileLen int
 		fileLen, err = WriteFile(*filePath, res.Body)
 		raw = map[string]interface{}{"fileLen": fileLen}
-		println("XXX", *filePath, fileLen)
-		//*bodyArr, err = ioutil.ReadAll(res.Body)
 	} else {
 		jdec := json.NewDecoder(res.Body)
 		jdec.UseNumber()
